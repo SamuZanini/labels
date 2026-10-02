@@ -98,6 +98,7 @@ class LabelingApp:
             self._on_select_annotation,
             self._on_canvas_change,
             self._on_zoom_changed,
+            self._request_class,
         )
         self.canvas.grid(row=0, column=1, sticky="nsew")
 
@@ -118,6 +119,11 @@ class LabelingApp:
             right,
             text="Alterar classe do label selecionado",
             command=self.change_selected_class,
+        ).pack(fill="x", pady=(0, 16))
+        ttk.Button(
+            right,
+            text="Renomear classe selecionada",
+            command=self.rename_selected_class,
         ).pack(fill="x", pady=(0, 16))
 
         ttk.Separator(right).pack(fill="x", pady=(0, 12))
@@ -205,12 +211,56 @@ class LabelingApp:
 
     def add_class(self) -> None:
         name = self.new_class_entry.get().strip()
-        if not name or name in self.classes:
+        if not self._add_class_name(name):
             return
-        self.classes.append(name)
         self.new_class_entry.delete(0, tk.END)
+
+    def _add_class_name(self, name: str) -> bool:
+        if not name or name in self.classes:
+            return False
+        self.classes.append(name)
         self._save_classes()
         self._refresh_class_combo(len(self.classes) - 1)
+        return True
+
+    def _request_class(self) -> bool:
+        if self.classes:
+            return True
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Criar classe")
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        dialog.grab_set()
+
+        content = ttk.Frame(dialog, padding=14)
+        content.pack(fill="both", expand=True)
+        ttk.Label(content, text="Crie uma classe para iniciar a marcação:").pack(anchor="w", pady=(0, 8))
+        name_entry = ttk.Entry(content, width=32)
+        name_entry.pack(fill="x")
+        error = tk.StringVar()
+        ttk.Label(content, textvariable=error, foreground="#a12622").pack(anchor="w", pady=(4, 0))
+
+        created = False
+
+        def confirm() -> None:
+            nonlocal created
+            if not self._add_class_name(name_entry.get().strip()):
+                error.set("Informe um nome de classe válido.")
+                name_entry.focus_set()
+                return
+            created = True
+            dialog.destroy()
+
+        buttons = ttk.Frame(content)
+        buttons.pack(fill="x", pady=(10, 0))
+        ttk.Button(buttons, text="Cancelar", command=dialog.destroy).pack(side="right")
+        ttk.Button(buttons, text="Criar", command=confirm).pack(side="right", padx=(0, 6))
+        dialog.bind("<Return>", lambda _event: confirm())
+        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        name_entry.focus_set()
+        dialog.wait_window()
+        return created
 
     def delete_selected(self) -> None:
         index = self.canvas.selected_index
@@ -236,6 +286,34 @@ class LabelingApp:
         self._refresh_annotations()
         self.canvas.redraw()
         self.save_current()
+
+    def rename_selected_class(self) -> None:
+        class_id = self.class_combo.current()
+        if not 0 <= class_id < len(self.classes):
+            self.status.set("Selecione uma classe para renomear")
+            return
+
+        name = simpledialog.askstring(
+            "Renomear classe",
+            "Novo nome da classe:",
+            initialvalue=self.classes[class_id],
+            parent=self.root,
+        )
+        if name is None:
+            return
+        name = name.strip()
+        if not name:
+            messagebox.showerror("Nome inválido", "O nome da classe não pode ficar vazio.", parent=self.root)
+            return
+        if name in self.classes and name != self.classes[class_id]:
+            messagebox.showerror("Nome já utilizado", "Já existe uma classe com esse nome.", parent=self.root)
+            return
+
+        self.classes[class_id] = name
+        self._save_classes()
+        self._refresh_class_combo(class_id)
+        self._refresh_annotations()
+        self.canvas.redraw()
 
     def set_tool(self, tool: str) -> None:
         self.tool = tool
@@ -297,7 +375,7 @@ class LabelingApp:
     def _load_classes(self) -> None:
         assert self.folder is not None
         classes_path = self.folder / "classes.txt"
-        self.classes = [line.strip() for line in classes_path.read_text(encoding="utf-8").splitlines() if line.strip()] if classes_path.exists() else ["objeto"]
+        self.classes = [line.strip() for line in classes_path.read_text(encoding="utf-8").splitlines() if line.strip()] if classes_path.exists() else []
         self.current_class_id = 0
         self._refresh_class_combo(0)
 

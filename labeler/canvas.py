@@ -14,12 +14,14 @@ class AnnotationCanvas(tk.Canvas):
         on_select: Callable[[int | None], None],
         on_change: Callable[[], None],
         on_zoom: Callable[[float], None],
+        ensure_class: Callable[[], bool],
     ) -> None:
         super().__init__(master, background="#1c2728", highlightthickness=0, cursor="crosshair")
         self.on_create = on_create
         self.on_select = on_select
         self.on_change = on_change
         self.on_zoom = on_zoom
+        self.ensure_class = ensure_class
         self.image: Image.Image | None = None
         self.photo: ImageTk.PhotoImage | None = None
         self.annotations: list[Annotation] = []
@@ -209,6 +211,8 @@ class AnnotationCanvas(tk.Canvas):
         self._pointer = (event.x, event.y)
         if self.image is None:
             return
+        if self.tool in ("box", "polygon") and not self.ensure_class():
+            return
         point = self._to_image(event.x, event.y)
         if self.tool == "box":
             self._start = point
@@ -354,4 +358,3 @@ class AnnotationCanvas(tk.Canvas):
         if self.tool == "polygon" and self._draft:
             self._draft.pop()
             self.redraw()
-
