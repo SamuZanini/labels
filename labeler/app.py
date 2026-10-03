@@ -115,6 +115,7 @@ class LabelingApp:
         self.new_class_entry.pack(side="left", fill="x", expand=True)
         self.new_class_entry.bind("<Return>", lambda _event: self.add_class())
         ttk.Button(add_class_row, text="+", width=3, command=self.add_class).pack(side="left", padx=(5, 0))
+        ttk.Button(right, text="Carregar classes de arquivo", command=self.import_classes).pack(fill="x", pady=(0, 12))
         ttk.Button(
             right,
             text="Alterar classe do label selecionado",
@@ -214,6 +215,44 @@ class LabelingApp:
         if not self._add_class_name(name):
             return
         self.new_class_entry.delete(0, tk.END)
+
+    def import_classes(self) -> None:
+        if self.folder is None:
+            messagebox.showinfo("Abra uma pasta", "Abra uma pasta de imagens antes de carregar as classes.", parent=self.root)
+            return
+
+        selected = filedialog.askopenfilename(
+            title="Selecione o arquivo de classes",
+            filetypes=(("Arquivos de texto", "*.txt"), ("Todos os arquivos", "*.*")),
+        )
+        if not selected:
+            return
+
+        try:
+            classes = [
+                line.strip()
+                for line in Path(selected).read_text(encoding="utf-8-sig").splitlines()
+                if line.strip()
+            ]
+            if not classes:
+                raise ValueError("O arquivo não contém nenhuma classe.")
+            if self.classes and classes != self.classes and not messagebox.askyesno(
+                "Substituir classes",
+                "A lista atual será substituída. Como os IDs dos labels dependem da ordem das classes, "
+                "isso pode alterar a classe exibida nas anotações existentes. Deseja continuar?",
+                parent=self.root,
+            ):
+                return
+            (self.folder / "classes.txt").write_text("\n".join(classes) + "\n", encoding="utf-8")
+        except (OSError, UnicodeError, ValueError) as error:
+            messagebox.showerror("Não foi possível carregar as classes", str(error), parent=self.root)
+            return
+
+        self.classes = classes
+        self.current_class_id = 0
+        self._refresh_class_combo(0)
+        self._refresh_annotations()
+        self.status.set(f"{len(classes)} classes carregadas e salvas em {self.folder / 'classes.txt'}")
 
     def _add_class_name(self, name: str) -> bool:
         if not name or name in self.classes:
