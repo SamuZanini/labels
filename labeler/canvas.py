@@ -7,6 +7,8 @@ from .models import Annotation, Point
 
 
 class AnnotationCanvas(tk.Canvas):
+    POLYGON_SNAP_RADIUS = 9.0
+
     def __init__(
         self,
         master: tk.Misc,
@@ -218,6 +220,18 @@ class AnnotationCanvas(tk.Canvas):
             self._start = point
             self.redraw()
         elif self.tool == "polygon":
+            snapped = self._snap_to_vertex(
+                (event.x, event.y),
+                [
+                    (self._to_canvas(vertex), vertex)
+                    for annotation in self.annotations
+                    if annotation.kind == "polygon"
+                    for vertex in annotation.points
+                ],
+                self.POLYGON_SNAP_RADIUS,
+            )
+            if snapped is not None:
+                point = snapped
             self._draft.append(point)
             self.redraw()
         else:
@@ -317,6 +331,25 @@ class AnnotationCanvas(tk.Canvas):
             min(max(image_x, 0.0), float(self.image.width)),
             min(max(image_y, 0.0), float(self.image.height)),
         )
+
+    @staticmethod
+    def _snap_to_vertex(
+        point: tuple[float, float],
+        vertices: list[tuple[tuple[float, float], Point]],
+        radius: float,
+    ) -> Point | None:
+        radius_squared = radius * radius
+        nearest: Point | None = None
+        nearest_distance_squared = radius_squared
+        for canvas_vertex, image_vertex in vertices:
+            distance_squared = (
+                (point[0] - canvas_vertex[0]) ** 2
+                + (point[1] - canvas_vertex[1]) ** 2
+            )
+            if distance_squared <= nearest_distance_squared:
+                nearest = image_vertex
+                nearest_distance_squared = distance_squared
+        return nearest
 
     @staticmethod
     def _resize_box(points: list[Point], handle_index: int, current: Point) -> list[Point]:

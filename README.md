@@ -20,7 +20,7 @@ python -m labeler
 
 1. Clique em **Abrir pasta** e escolha a pasta com as imagens.
 2. Selecione uma classe ou cadastre outra no painel da direita. Também é possível clicar em **Carregar classes de arquivo** para importar um arquivo `.txt` com uma classe por linha; essa ação substitui a lista atual e salva a lista como `classes.txt` na pasta de imagens. Ao reabrir essa pasta, o arquivo é carregado automaticamente. Se a lista importada for diferente, o aplicativo confirma a substituição, pois mudar a ordem pode alterar a classe associada aos labels existentes. Se ainda não houver classes, a primeira tentativa de desenho abrirá uma janela para criar uma. A classe selecionada será usada nos novos labels; para mudar a classe de um label existente, selecione-o na lista de anotações e clique em **Alterar classe do label selecionado**. Para editar um nome, selecione a classe e clique em **Renomear classe selecionada**. Os IDs YOLO correspondem à ordem das linhas, começando em zero.
-3. Escolha **Retângulo** e arraste para criar uma caixa; escolha **Polígono**, clique nos vértices e pressione Enter para concluir.
+3. Escolha **Retângulo** e arraste para criar uma caixa; escolha **Polígono**, clique nos vértices e pressione Enter para concluir. Ao clicar perto de um vértice existente de outro polígono, o novo ponto se encaixa exatamente nele.
 4. Em **Selecionar**, arraste o interior para mover uma anotação; arraste as alças para redimensionar a caixa ou ajustar vértices. Use Delete para excluir.
 5. Use a roda do mouse para zoom no cursor, os botões `+`/`−` para zoom centralizado e o botão do meio do mouse para mover a imagem.
 6. As anotações são salvas automaticamente ao editar e ao trocar de imagem. Também é possível usar Ctrl+S.

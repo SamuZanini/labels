@@ -143,7 +143,7 @@ class LabelingApp:
         self.annotation_list.bind("<<ListboxSelect>>", self._on_annotation_list_selected)
         ttk.Label(
             right,
-            text="Polígono: clique nos vértices e pressione Enter para fechar.\nArraste o meio do mouse para mover a imagem.",
+            text="Polígono: clique nos vértices e pressione Enter para fechar. Clique perto de um vértice existente para encaixar nele.\nArraste o meio do mouse para mover a imagem.",
             style="Panel.TLabel",
             wraplength=215,
             justify="left",
